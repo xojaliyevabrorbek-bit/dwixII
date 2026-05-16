@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Türkçe Konuşma Trenajoni</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{min-height:100vh;background:#0a0a0f;font-family:'Lora',serif;color:#e8e0d5;display:flex;flex-direction:column;align-items:center;}
+  ::-webkit-scrollbar{width:4px;}
+  ::-webkit-scrollbar-track{background:#111;}
+  ::-webkit-scrollbar-thumb{background:#333;border-radius:2px;}
+  header{width:100%;max-width:680px;padding:28px 24px 0;display:flex;align-items:center;justify-content:space-between;}
+  main{width:100%;max-width:680px;padding:24px 16px 40px;flex:1;}
+  .playfair{font-family:'Playfair Display',serif;}
+  .label{font-size:11px;color:#555;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;font-family:'Lora',serif;}
+
+  /* Level */
+  .level-btns{display:flex;gap:10px;margin-bottom:32px;}
+  .level-btn{flex:1;padding:10px 0;border-radius:8px;cursor:pointer;border:2px solid #222;background:#111;color:#555;font-family:'Lora',serif;font-size:14px;transition:all .2s;}
+
+  /* Topic grid */
+  .topics{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .topic-card{background:#111;border:1px solid #222;border-radius:12px;padding:18px 16px;cursor:pointer;transition:all .2s;}
+  .topic-card:hover{transform:translateY(-3px);border-color:#c9a96e;}
+  .topic-emoji{font-size:28px;margin-bottom:8px;}
+  .topic-title{font-family:'Playfair Display',serif;font-size:15px;color:#e8e0d5;margin-bottom:6px;}
+  .topic-prompt{font-size:12px;color:#555;line-height:1.5;font-style:italic;}
+
+  /* Chat */
+  #chat-screen{display:none;flex-direction:column;height:calc(100vh - 140px);}
+  .topic-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#111;border-radius:10px;margin-bottom:16px;border:1px solid #222;}
+  .end-btn{background:#1a1a1a;border:1px solid #333;color:#888;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-family:'Lora',serif;}
+  #messages{flex:1;overflow-y:auto;padding-right:4px;margin-bottom:16px;}
+  .msg-ai{display:flex;gap:10px;align-items:flex-start;margin-bottom:16px;}
+  .ai-avatar{width:32px;height:32px;border-radius:50%;background:#1a1a1a;border:1px solid #333;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+  .ai-bubble{background:#111;border:1px solid #222;border-radius:4px 12px 12px 12px;padding:12px 16px;max-width:85%;font-size:15px;line-height:1.7;color:#d4ccc4;}
+  .msg-user{display:flex;flex-direction:column;align-items:flex-end;margin-bottom:16px;}
+  .user-bubble{background:#1a1208;border:1px solid #3a2e1a;border-radius:12px 4px 12px 12px;padding:12px 16px;max-width:85%;font-size:15px;line-height:1.7;}
+  .analysis-box{background:#0f0f0f;border:1px solid #2a2a2a;border-radius:10px;padding:12px 14px;max-width:90%;font-size:13px;margin-top:6px;}
+  .score-line{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .score-num{font-family:'Playfair Display',serif;font-size:18px;}
+  .natural-tag{font-size:12px;font-style:italic;}
+  .error-item{font-size:12px;margin-bottom:3px;padding-left:12px;border-left:2px solid #3a1a1a;color:#cc7777;}
+  .improved-box{background:#0a1a0a;border:1px solid #1a3a1a;border-radius:6px;padding:8px 10px;margin-bottom:6px;}
+  .improved-label{color:#4ade80;font-size:11px;margin-bottom:3px;letter-spacing:1px;text-transform:uppercase;}
+  .improved-text{color:#9be49b;font-style:italic;}
+  .tip-text{color:#c9a96e;font-size:12px;font-style:italic;}
+  .typing{display:flex;gap:5px;align-items:center;}
+  .dot{width:7px;height:7px;border-radius:50%;background:#555;animation:pulse 1.2s ease-in-out infinite;}
+  .dot:nth-child(2){animation-delay:.2s;}
+  .dot:nth-child(3){animation-delay:.4s;}
+  @keyframes pulse{0%,100%{opacity:.4;}50%{opacity:1;}}
+  .input-row{display:flex;gap:10px;align-items:flex-end;}
+  #user-input{flex:1;background:#111;border:1px solid #2a2a2a;border-radius:10px;color:#e8e0d5;padding:12px 14px;font-family:'Lora',serif;font-size:15px;line-height:1.6;outline:none;resize:none;}
+  .send-btn{background:#c9a96e;border:none;border-radius:10px;padding:12px 18px;cursor:pointer;font-size:20px;transition:background .2s;flex-shrink:0;}
+  .send-btn:hover{background:#d4b07a;}
+  .send-btn:disabled{opacity:.4;cursor:default;}
+  .mic-btn{background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:12px 14px;cursor:pointer;font-size:20px;transition:all .2s;flex-shrink:0;color:#888;}
+  .mic-btn:hover{border-color:#c9a96e;color:#c9a96e;}
+  .mic-btn.recording{background:#2a0a0a;border-color:#f87171;color:#f87171;animation:micPulse 1s ease-in-out infinite;}
+  .mic-btn:disabled{opacity:.4;cursor:default;}
+  @keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(248,113,113,0.3);}50%{box-shadow:0 0 0 6px rgba(248,113,113,0);}}
+
+  /* Result */
+  #result-screen{display:none;}
+  .result-score{text-align:center;margin-bottom:36px;padding-top:16px;}
+  .big-score{font-family:'Playfair Display',serif;font-size:60px;}
+  .error-section{background:#0f0808;border:1px solid #2a1a1a;border-radius:12px;padding:18px 20px;margin-bottom:20px;}
+  .tip-section{background:#0a0f08;border:1px solid #1a2a1a;border-radius:12px;padding:18px 20px;margin-bottom:28px;}
+  .section-title{font-family:'Playfair Display',serif;font-size:14px;margin-bottom:12px;letter-spacing:1px;}
+  .restart-btn{width:100%;padding:14px;background:#c9a96e;border:none;border-radius:10px;color:#0a0a0f;font-family:'Playfair Display',serif;font-size:16px;cursor:pointer;letter-spacing:1px;}
+
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+  .fade-in{animation:fadeIn .3s ease;}
+
+  #home-screen{display:block;}
+  .back-btn{background:none;border:1px solid #333;color:#888;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-family:'Lora',serif;}
+  .logo-title{font-family:'Playfair Display',serif;font-size:22px;color:#c9a96e;letter-spacing:1px;}
+  .logo-sub{font-size:11px;color:#666;letter-spacing:3px;text-transform:uppercase;}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo-title">Türkçe Konuşma</div>
+    <div class="logo-sub">Speaking Trenajoni</div>
+  </div>
+  <button class="back-btn" id="back-btn" style="display:none" onclick="goHome()">← Ana Menü</button>
+</header>
+
+<main>
+  <!-- HOME -->
+  <div id="home-screen" class="fade-in">
+    <p style="color:#888;font-size:14px;margin-bottom:28px;line-height:1.7;font-style:italic;">
+      Mavzu tanlang, suhbat boshlang. Har bir xabaringiz grammatika va tabiiylik jihatidan tekshiriladi.
+    </p>
+    <div class="label">Daraja</div>
+    <div class="level-btns" id="level-btns"></div>
+    <div class="label">Mavzu tanlang</div>
+    <div class="topics" id="topics-grid"></div>
+  </div>
+
+  <!-- CHAT -->
+  <div id="chat-screen" style="display:none;flex-direction:column;height:calc(100vh - 140px);">
+    <div class="topic-bar">
+      <div style="font-size:14px;" id="topic-bar-title"></div>
+      <button class="end-btn" onclick="endSession()">Tugatish</button>
+    </div>
+    <div id="messages"></div>
+    <div class="input-row">
+      <textarea id="user-input" rows="2" placeholder="Türkçe yazın veya 🎤 basın..."></textarea>
+      <button class="mic-btn" id="mic-btn" onclick="toggleMic()" title="Ovozli kiritish">🎤</button>
+      <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div id="result-screen" style="display:none;" class="fade-in">
+    <div class="result-score">
+      <div class="big-score" id="r-score"></div>
+      <div style="color:#888;font-style:italic;" id="r-count"></div>
+    </div>
+    <div class="error-section" id="r-errors" style="display:none">
+      <div class="section-title" style="color:#f87171;">Keng uchraydigan xatolar</div>
+      <div id="r-errors-list"></div>
+    </div>
+    <div class="tip-section" id="r-tips" style="display:none">
+      <div class="section-title" style="color:#4ade80;">Maslahatlar</div>
+      <div id="r-tips-list"></div>
+    </div>
+    <button class="restart-btn" onclick="goHome()">Yangi Suhbat Boshlash</button>
+  </div>
+</main>
+
+<script>
+const TOPICS = [
+  {id:1,emoji:"☕",title:"Kahvaltı",prompt:"Bugünkü kahvaltınız nasıldı? Ne yediniz?"},
+  {id:2,emoji:"🛒",title:"Alışveriş",prompt:"Markette ne almak istiyorsunuz? Fiyatlar hakkında ne düşünüyorsunuz?"},
+  {id:3,emoji:"🌤",title:"Hava Durumu",prompt:"Bugün hava nasıl? Hafta sonu ne yapmayı planlıyorsunuz?"},
+  {id:4,emoji:"👨‍👩‍👧",title:"Aile",prompt:"Ailenizden bahsedin. Kaç kişisiniz, nerede yaşıyorsunuz?"},
+  {id:5,emoji:"🎬",title:"Film & Dizi",prompt:"Son izlediğiniz film veya dizi neydi? Beğendiniz mi?"},
+  {id:6,emoji:"✈️",title:"Seyahat",prompt:"En çok hangi şehre gitmek istersiniz ve neden?"},
+  {id:7,emoji:"🍽️",title:"Yemek",prompt:"En sevdiğiniz Türk yemeği nedir? Nasıl yapılır?"},
+  {id:8,emoji:"💼",title:"İş & Kariyer",prompt:"İdeal işiniz nasıl olurdu? Hayalinizdeki kariyeri anlatın."},
+];
+const LEVELS = [
+  {id:"beginner",label:"Başlangıç",color:"#4ade80"},
+  {id:"intermediate",label:"Orta",color:"#facc15"},
+  {id:"advanced",label:"İleri",color:"#f87171"},
+];
+
+let currentLevel = "intermediate";
+let currentTopic = null;
+let chatHistory = [];  // {role, text, analysis}
+let loading = false;
+let turnCount = 0;
+
+// Render level buttons
+function renderLevels(){
+  const el = document.getElementById("level-btns");
+  el.innerHTML = LEVELS.map(l=>`
+    <button class="level-btn" id="lvl-${l.id}" onclick="setLevel('${l.id}')"
+      style="border-color:${currentLevel===l.id?l.color:'#222'};background:${currentLevel===l.id?l.color+'18':'#111'};color:${currentLevel===l.id?l.color:'#555'}">
+      ${l.label}
+    </button>`).join("");
+}
+function setLevel(id){currentLevel=id;renderLevels();}
+
+// Render topics
+function renderTopics(){
+  const el = document.getElementById("topics-grid");
+  el.innerHTML = TOPICS.map(t=>`
+    <div class="topic-card" onclick="startSession(${t.id})">
+      <div class="topic-emoji">${t.emoji}</div>
+      <div class="topic-title">${t.title}</div>
+      <div class="topic-prompt">${t.prompt}</div>
+    </div>`).join("");
+}
+
+function scoreColor(s){return s>=8?"#4ade80":s>=5?"#facc15":"#f87171";}
+
+// Show/hide screens
+function showScreen(name){
+  ["home-screen","chat-screen","result-screen"].forEach(id=>{
+    const el=document.getElementById(id);
+    if(id===name+"-screen"){
+      el.style.display = name==="chat"?"flex":"block";
+      el.classList.add("fade-in");
+    } else {
+      el.style.display="none";
+    }
+  });
+  document.getElementById("back-btn").style.display = name==="home"?"none":"block";
+}
+
+async function callClaude(messages, systemPrompt){
+  const res = await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      model:"claude-sonnet-4-20250514",
+      max_tokens:1000,
+      system:systemPrompt,
+      messages
+    })
+  });
+  const data = await res.json();
+  return data.content?.map(i=>i.text||"").join("\n")||"";
+}
+
+function parseAnalysis(raw){
+  try{
+    const clean=raw.replace(/```json|```/g,"").trim();
+    return JSON.parse(clean);
+  }catch{return null;}
+}
+
+function buildConvSystem(isStart){
+  const lvlDesc={beginner:"basit ve kısa",intermediate:"orta düzey",advanced:"akıcı ve karmaşık"}[currentLevel];
+  return `Sen Türkçe konuşma pratiği için bir dil partnerisin. Kullanıcı ${lvlDesc} Türkçe konuşuyor.
+Konu: ${currentTopic.title} — ${currentTopic.prompt}
+${isStart?"Konuşmayı başlat, kullanıcıya bir soru sor.":"Konuşmaya doğal devam et, bir soru ekle."}
+Kısa ve doğal konuş (2-3 cümle). Türkçe konuş.`;
+}
+
+function addTypingIndicator(){
+  const msgs = document.getElementById("messages");
+  const div = document.createElement("div");
+  div.className="msg-ai";
+  div.id="typing-indicator";
+  div.innerHTML=`<div class="ai-avatar">🤖</div><div class="ai-bubble"><div class="typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>`;
+  msgs.appendChild(div);
+  div.scrollIntoView({behavior:"smooth"});
+}
+function removeTypingIndicator(){
+  const el=document.getElementById("typing-indicator");
+  if(el)el.remove();
+}
+
+function appendAiMessage(text){
+  const msgs=document.getElementById("messages");
+  const div=document.createElement("div");
+  div.className="msg-ai fade-in";
+  div.innerHTML=`<div class="ai-avatar">🤖</div><div class="ai-bubble">${escHtml(text)}</div>`;
+  msgs.appendChild(div);
+  div.scrollIntoView({behavior:"smooth"});
+}
+
+function appendUserMessage(text, analysis){
+  const msgs=document.getElementById("messages");
+  const div=document.createElement("div");
+  div.className="msg-user fade-in";
+  let inner=`<div class="user-bubble">${escHtml(text)}</div>`;
+  if(analysis){
+    const sc=analysis.score||5;
+    const col=scoreColor(sc);
+    const natTag=analysis.natural
+      ?`<span class="natural-tag" style="color:#4ade80">✓ Tabiiy</span>`
+      :`<span class="natural-tag" style="color:#f87171">✗ G'ayritabiiy</span>`;
+    let errs="";
+    if(analysis.errors&&analysis.errors.length){
+      errs=analysis.errors.map(e=>`<div class="error-item">⚠ ${escHtml(e)}</div>`).join("");
+    }
+    let improved="";
+    if(analysis.improved&&analysis.improved!==text){
+      improved=`<div class="improved-box"><div class="improved-label">Yaxshilangan variant</div><div class="improved-text">${escHtml(analysis.improved)}</div></div>`;
+    }
+    let tip="";
+    if(analysis.tip){
+      tip=`<div class="tip-text">💡 ${escHtml(analysis.tip)}</div>`;
+    }
+    inner+=`<div class="analysis-box">
+      <div class="score-line">
+        <span class="score-num" style="color:${col}">${sc}/10</span>
+        <span style="color:#444">—</span>
+        ${natTag}
+      </div>
+      ${errs}${improved}${tip}
+    </div>`;
+  }
+  div.innerHTML=inner;
+  msgs.appendChild(div);
+  div.scrollIntoView({behavior:"smooth"});
+}
+
+function escHtml(s){
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+async function startSession(topicId){
+  currentTopic=TOPICS.find(t=>t.id===topicId);
+  chatHistory=[];
+  turnCount=0;
+  document.getElementById("messages").innerHTML="";
+  document.getElementById("topic-bar-title").innerHTML=
+    `<span style="font-size:20px;margin-right:10px">${currentTopic.emoji}</span><span style="color:#c9a96e;font-family:'Lora',serif">${currentTopic.title}</span><span style="color:#444;font-size:12px;margin-left:8px">— ${LEVELS.find(l=>l.id===currentLevel).label}</span>`;
+  showScreen("chat");
+  setLoading(true);
+  addTypingIndicator();
+
+  const aiText=await callClaude([{role:"user",content:"Konuşmayı başlat."}],buildConvSystem(true));
+  removeTypingIndicator();
+  appendAiMessage(aiText);
+  chatHistory.push({role:"ai",text:aiText});
+  setLoading(false);
+}
+
+async function sendMessage(){
+  const inp=document.getElementById("user-input");
+  const text=inp.value.trim();
+  if(!text||loading)return;
+  inp.value="";
+  appendUserMessage(text,null);
+  chatHistory.push({role:"user",text,analysis:null});
+  setLoading(true);
+  turnCount++;
+
+  // Analysis
+  const analysisSys=`Sen bir Türkçe dil uzmanısın. Kullanıcının Türkçe cümlesini analiz et ve SADECE JSON döndür, başka hiçbir şey yok.
+JSON formatı:
+{"score":1-10,"errors":["hata1"],"improved":"daha doğal versiyon","tip":"kısa ipucu","natural":true}
+Seviye: ${currentLevel}. Hata yoksa errors boş array.`;
+
+  const [analysisRaw, _] = await Promise.all([
+    callClaude([{role:"user",content:text}],analysisSys),
+    Promise.resolve()
+  ]);
+  const analysis=parseAnalysis(analysisRaw);
+
+  // Update last user message with analysis
+  chatHistory[chatHistory.length-1].analysis=analysis;
+  const msgs=document.getElementById("messages");
+  const userDivs=msgs.querySelectorAll(".msg-user");
+  const lastUserDiv=userDivs[userDivs.length-1];
+  if(lastUserDiv&&analysis){
+    const sc=analysis.score||5;
+    const col=scoreColor(sc);
+    const natTag=analysis.natural
+      ?`<span class="natural-tag" style="color:#4ade80">✓ Tabiiy</span>`
+      :`<span class="natural-tag" style="color:#f87171">✗ G'ayritabiiy</span>`;
+    let errs="";
+    if(analysis.errors&&analysis.errors.length)
+      errs=analysis.errors.map(e=>`<div class="error-item">⚠ ${escHtml(e)}</div>`).join("");
+    let improved="";
+    if(analysis.improved&&analysis.improved!==text)
+      improved=`<div class="improved-box"><div class="improved-label">Yaxshilangan variant</div><div class="improved-text">${escHtml(analysis.improved)}</div></div>`;
+    let tip="";
+    if(analysis.tip)tip=`<div class="tip-text">💡 ${escHtml(analysis.tip)}</div>`;
+    const abox=document.createElement("div");
+    abox.className="analysis-box fade-in";
+    abox.innerHTML=`<div class="score-line"><span class="score-num" style="color:${col}">${sc}/10</span><span style="color:#444">—</span>${natTag}</div>${errs}${improved}${tip}`;
+    lastUserDiv.appendChild(abox);
+  }
+
+  // AI reply
+  addTypingIndicator();
+  const convMsgs=chatHistory.map(m=>({role:m.role==="ai"?"assistant":"user",content:m.text}));
+  const aiReply=await callClaude(convMsgs,buildConvSystem(false));
+  removeTypingIndicator();
+  appendAiMessage(aiReply);
+  chatHistory.push({role:"ai",text:aiReply});
+  setLoading(false);
+  inp.focus();
+}
+
+function setLoading(val){
+  loading=val;
+  const btn=document.getElementById("send-btn");
+  if(btn)btn.disabled=val;
+  const mic=document.getElementById("mic-btn");
+  if(mic&&!isRecording)mic.disabled=val;
+}
+
+// --- Speech Recognition ---
+let recognition=null;
+let isRecording=false;
+
+function initSpeech(){
+  const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SpeechRecognition)return null;
+  const r=new SpeechRecognition();
+  r.lang="tr-TR";
+  r.continuous=false;
+  r.interimResults=true;
+  r.onresult=e=>{
+    let interim="",final="";
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal) final+=e.results[i][0].transcript;
+      else interim+=e.results[i][0].transcript;
+    }
+    const inp=document.getElementById("user-input");
+    inp.value=(final||interim);
+  };
+  r.onend=()=>{
+    isRecording=false;
+    const mic=document.getElementById("mic-btn");
+    if(mic){mic.classList.remove("recording");mic.textContent="🎤";}
+    // auto-send if there's text
+    const inp=document.getElementById("user-input");
+    if(inp.value.trim()) sendMessage();
+  };
+  r.onerror=e=>{
+    isRecording=false;
+    const mic=document.getElementById("mic-btn");
+    if(mic){mic.classList.remove("recording");mic.textContent="🎤";}
+    if(e.error==="not-allowed"){
+      alert("Mikrofon ruxsati berilmagan. Brauzer sozlamalaridan ruxsat bering.");
+    }
+  };
+  return r;
+}
+
+function toggleMic(){
+  if(loading)return;
+  const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SpeechRecognition){
+    alert("Brauzeringiz ovozli kiritishni qo'llab-quvvatlamaydi. Chrome yoki Edge ishlatib ko'ring.");
+    return;
+  }
+  const mic=document.getElementById("mic-btn");
+  if(isRecording){
+    recognition&&recognition.stop();
+    isRecording=false;
+    mic.classList.remove("recording");
+    mic.textContent="🎤";
+    return;
+  }
+  recognition=initSpeech();
+  if(!recognition)return;
+  document.getElementById("user-input").value="";
+  recognition.start();
+  isRecording=true;
+  mic.classList.add("recording");
+  mic.textContent="⏹";
+}
+
+function endSession(){
+  const userMsgs=chatHistory.filter(m=>m.role==="user"&&m.analysis);
+  if(userMsgs.length===0){goHome();return;}
+  const avgScore=Math.round(userMsgs.reduce((s,m)=>s+(m.analysis?.score||5),0)/userMsgs.length);
+  const allErrors=[...new Set(userMsgs.flatMap(m=>m.analysis?.errors||[]))];
+  const tips=[...new Set(userMsgs.map(m=>m.analysis?.tip).filter(Boolean))];
+
+  const col=scoreColor(avgScore);
+  document.getElementById("r-score").innerHTML=`<span style="color:${col}">${avgScore}</span><span style="font-size:24px;color:#444">/10</span>`;
+  document.getElementById("r-count").textContent=`${userMsgs.length} ta xabar tahlil qilindi`;
+
+  const errEl=document.getElementById("r-errors");
+  const errList=document.getElementById("r-errors-list");
+  if(allErrors.length){
+    errList.innerHTML=allErrors.map(e=>`<div style="color:#cc7777;font-size:13px;margin-bottom:6px;padding-left:12px;border-left:2px solid #3a1a1a;font-family:'Lora',serif;">${escHtml(e)}</div>`).join("");
+    errEl.style.display="block";
+  } else errEl.style.display="none";
+
+  const tipEl=document.getElementById("r-tips");
+  const tipList=document.getElementById("r-tips-list");
+  if(tips.length){
+    tipList.innerHTML=tips.map(t=>`<div style="color:#7ab87a;font-size:13px;margin-bottom:6px;padding-left:12px;border-left:2px solid #1a3a1a;font-family:'Lora',serif;font-style:italic;">💡 ${escHtml(t)}</div>`).join("");
+    tipEl.style.display="block";
+  } else tipEl.style.display="none";
+
+  showScreen("result");
+}
+
+function goHome(){
+  chatHistory=[];
+  currentTopic=null;
+  turnCount=0;
+  document.getElementById("messages").innerHTML="";
+  showScreen("home");
+}
+
+// Enter key
+document.addEventListener("DOMContentLoaded",()=>{
+  renderLevels();
+  renderTopics();
+  document.getElementById("user-input").addEventListener("keydown",e=>{
+    if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage();}
+  });
+});
+</script>
+</body>
+</html>
